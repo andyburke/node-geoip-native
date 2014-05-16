@@ -1,6 +1,6 @@
-var countries = [],
+var autonomoussystems = [],
 	midpoints = [],
-	numcountries = 0;
+    numautonomoussystems = 0;
 
 var geoip = module.exports = {
 
@@ -83,14 +83,14 @@ function find(ipl) {
     
     while(true) {
 
-        mpi++;
         step = midpoints[mpi];
-        current = countries[n];
+        mpi++;
+        current = autonomoussystems[n];
         nn = n + 1;
         pn = n - 1;
 
-        next = nn < numcountries ? countries[nn] : null;
-        prev = pn > -1 ? countries[pn] : null;
+        next = nn < numautonomoussystems ? autonomoussystems[nn] : null;
+        prev = pn > -1 ? autonomoussystems[pn] : null;
         
 		// take another step?
         if(step > 0) {
@@ -134,7 +134,7 @@ function find(ipl) {
 
     var fs = require("fs");
     var sys = require("sys");
-    var stream = fs.createReadStream(__dirname + "/GeoIPCountryWhois.csv");
+    var stream = fs.createReadStream(__dirname + "/GeoIPASNum2.csv");
     var buffer = "";
 
     stream.addListener("data", function(data) {
@@ -147,20 +147,20 @@ function find(ipl) {
 
         for(var i=0; i<entries.length; i++) {
             var entry = entries[i].split(",");
-            countries.push({ipstart: parseInt(entry[2]), code: entry[4], name: entry[5]});
+            autonomoussystems.push({ipstart: parseInt(entry[0]), ipend: parseInt(entry[1]), asname: entry.slice(2).join(",")});
         }
 
-        countries.sort(function(a, b) {
+        autonomoussystems.sort(function(a, b) {
             return a.ipstart - b.ipstart;
         });
 
-        var n = Math.floor(countries.length / 2);
+        var n = Math.floor(autonomoussystems.length / 2);
         while(n >= 1) {
             n = Math.floor(n / 2);
             midpoints.push(n);
         }
 
-        numcountries = countries.length;
+        numautonomoussystems = autonomoussystems.length;
 		geoip.ready = true;
     });
 

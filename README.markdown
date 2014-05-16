@@ -1,3 +1,10 @@
+# Fork Notes:
+
+* More flexible tests, only test native version
+* Load/Lookup AS Numbers instead of countries
+* Latest Maxmind IPASNum file from http://www.maxmind.com
+* Still TODO: Fix up binary search...not working in certain cases
+
 # Node GeoIP Native
 
 This package is a lightning-fast, native JavaScript geoip lookup built on [MaxMind](http://www.maxmind.com/)'s free country database.
