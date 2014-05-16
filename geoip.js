@@ -1,20 +1,19 @@
 var autonomoussystems = [],
-	midpoints = [],
     numautonomoussystems = 0;
 
 var geoip = module.exports = {
 
     ready: false,
 
-    lookup: function(ip) {
+    lookup: function (ip) {
 
-        if(!geoip.ready) {
+        if (!geoip.ready) {
             return { error: "GeoIP not ready" };
         }
 
         var ipl = iplong(ip);
 
-        if(ipl == 0) {
+        if (ipl == 0) {
             return { error: "Invalid ip address " + ip + " -> " + ipl + " as integer" };
         }
 
@@ -24,42 +23,42 @@ var geoip = module.exports = {
 
 function iplong(ip) {
 
-    if(!ip) {
+    if (!ip) {
         return 0;
     }
 
     ip = ip.toString();
 
-    if(isNaN(ip) && ip.indexOf(".") == -1) {
+    if (isNaN(ip) && ip.indexOf(".") == -1) {
         return 0;
     }
 
-    if(ip.indexOf(".") == -1) {
+    if (ip.indexOf(".") == -1) {
 
         try {
             ip = parseFloat(ip);
             return ip < 0 || ip > 4294967296 ? 0 : ip;
         }
-        catch(s) {
+        catch (s) {
         }
     }
 
     var parts = ip.split(".");
 
-    if(parts.length != 4) {
+    if (parts.length != 4) {
         return 0;
     }
 
     var ipl = 0;
 
-    for(var i=0; i<4; i++) {
+    for (var i = 0; i < 4; i++) {
         parts[i] = parseInt(parts[i], 10);
 
-        if(parts[i] < 0 || parts[i] > 255) {
+        if (parts[i] < 0 || parts[i] > 255) {
             return 0;
         }
 
-        ipl += parts[3-i] * (Math.pow(256, i));
+        ipl += parts[3 - i] * (Math.pow(256, i));
     }
 
     return ipl > 4294967296 ? 0 : ipl;
@@ -72,96 +71,59 @@ function iplong(ip) {
  */
 function find(ipl) {
 
-    var mpi = 0;
-    var n = midpoints[0];
-    var step;
-    var current;
-    var next;
-    var prev;
-    var nn;
-    var pn;
-    
-    while(true) {
+    var imax = numautonomoussystems-1, imin = 0;
 
-        step = midpoints[mpi];
-        mpi++;
-        current = autonomoussystems[n];
-        nn = n + 1;
-        pn = n - 1;
-
-        next = nn < numautonomoussystems ? autonomoussystems[nn] : null;
-        prev = pn > -1 ? autonomoussystems[pn] : null;
-        
-		// take another step?
-        if(step > 0) {
-
-            if(!next || next.ipstart < ipl) {
-                n += step;
-            } else {
-                n -= step;
-            }
-
-            continue;
+    while (imax >= imin) {
+        // calculate the midpoint for roughly equal partition
+        var imid = Math.floor((imin + imax) / 2);
+        var autonomoussystem = autonomoussystems[imid];
+        if (autonomoussystem.ipstart <= ipl && autonomoussystem.ipend >= ipl) {
+            // key found at index imid
+            return autonomoussystem;
+            // determine which subarray to search
+        } else if (autonomoussystem.ipstart < ipl) {
+            // change min index to search upper subarray
+            imin = imid + 1;
+        } else {
+            // change max index to search lower subarray
+            imax = imid - 1;
         }
-
-        // we're either current, next or previous depending on which is closest to ipl
-        var cd = Math.abs(ipl - current.ipstart);
-        var nd = next && next.ipstart< ipl ? ipl - next.ipstart : 1000000000;
-        var pd = prev && prev.ipstart < ipl ? ipl - prev.ipstart : 1000000000;
-
-        // current wins
-        if(cd < nd && cd < pd) {
-            return current;
-        }
-
-         // next wins
-        if(nd < cd && nd < pd) {
-            return next;
-
-        }
-
-        // prev wins
-        return prev;
     }
+    // key was not found
+    return undefined;
 }
 
 /**
-* Prepare the data.  This uses the standard free GeoIP CSV database 
-* from MaxMind, you should be able to update it at any time by just
-* overwriting GeoIPCountryWhois.csv with a new version.
-*/
-(function() {
+ * Prepare the data.  This uses the standard free GeoIP CSV database
+ * from MaxMind, you should be able to update it at any time by just
+ * overwriting GeoIPCountryWhois.csv with a new version.
+ */
+(function () {
 
     var fs = require("fs");
     var sys = require("sys");
     var stream = fs.createReadStream(__dirname + "/GeoIPASNum2.csv");
     var buffer = "";
 
-    stream.addListener("data", function(data) {
+    stream.addListener("data", function (data) {
         buffer += data.toString().replace(/"/g, "");
     });
 
-    stream.addListener("end", function() {
+    stream.addListener("end", function () {
 
         var entries = buffer.split("\n");
 
-        for(var i=0; i<entries.length; i++) {
+        for (var i = 0; i < entries.length; i++) {
             var entry = entries[i].split(",");
             autonomoussystems.push({ipstart: parseInt(entry[0]), ipend: parseInt(entry[1]), asname: entry.slice(2).join(",")});
         }
 
-        autonomoussystems.sort(function(a, b) {
+        autonomoussystems.sort(function (a, b) {
             return a.ipstart - b.ipstart;
         });
 
-        var n = Math.floor(autonomoussystems.length / 2);
-        while(n >= 1) {
-            n = Math.floor(n / 2);
-            midpoints.push(n);
-        }
-
         numautonomoussystems = autonomoussystems.length;
-		geoip.ready = true;
+        geoip.ready = true;
     });
 
 }());

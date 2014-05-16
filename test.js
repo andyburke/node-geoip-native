@@ -1,6 +1,5 @@
 var geoip = require("./geoip.js");
 
-
 function random_test_ip() {
     var o1 = 1 + Math.round(Math.random() * 254);
     var o2 = 1 + Math.round(Math.random() * 254);
@@ -10,17 +9,16 @@ function random_test_ip() {
 }
 
 function static_test_ip() {
-//    return "8.8.8.8";
     return "8.8.8.8";
 }
 
-var ip_for_test = static_test_ip;
+var ip_for_test = random_test_ip;
 
 function test() {
 
     var total = 0;
     var numtests = 20;
-    var numiterations = 10; //1000000;
+    var numiterations = 1000000;
 
     console.log("starting test: geoip-native");
 
