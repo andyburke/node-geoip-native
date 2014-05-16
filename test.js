@@ -27,7 +27,7 @@ function test() {
         var start = new Date().getTime();
 
         for (var i = 0; i < numiterations; i++) {
-            console.log(geoip.lookup(ip_for_test()));
+            geoip.lookup(ip_for_test());
         }
 
         var finish = new Date().getTime();
