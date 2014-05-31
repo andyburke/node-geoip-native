@@ -96,7 +96,7 @@ function find(ipl) {
 /**
  * Prepare the data.  This uses the standard free GeoIP CSV database
  * from MaxMind, you should be able to update it at any time by just
- * overwriting GeoIPCountryWhois.csv with a new version.
+ * overwriting GeoIPASNum2.csv with a new version.
  */
 (function () {
 
