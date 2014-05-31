@@ -1,9 +1,9 @@
 # Fork Notes:
 
-* More flexible tests, only test native version
+* More flexible tests, only test native version, proper warmup
 * Load/Lookup AS Numbers instead of countries
 * Latest Maxmind IPASNum file from http://www.maxmind.com
-* Still TODO: Fix up binary search...not working in certain cases
+* DONE: Fixed binary search
 
 # Node GeoIP Native
 
