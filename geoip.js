@@ -1,7 +1,8 @@
 'use strict';
 
-var locations = [];
-var totalLocations = 0;
+var blocks = [];
+var locations = {};
+var totalBlocks = 0;
 
 var geoip = module.exports = {
 
@@ -76,24 +77,33 @@ function iplong( ip ) {
  */
 function find( ipl ) {
 
-    var imax = totalLocations - 1,
-        imin = 0;
+    var minIndex = 0;
+    var maxIndex = totalBlocks - 1;
+    var currentIndex;
+    var block;
+    var curBlock;
 
-    while ( imax >= imin ) {
-        var imid = Math.floor( ( imin + imax ) / 2 );
-        var location = locations[ imid ];
-        if ( location.ipstart <= ipl && location.ipend >= ipl ) {
-            return location;
+    while( minIndex <= maxIndex ) {
+        currentIndex = ( minIndex + maxIndex ) / 2 | 0;
+        curBlock = blocks[ currentIndex ];
+
+        if ( curBlock.end < ipl ) {
+            minIndex = currentIndex + 1;
         }
-        else if ( location.ipstart < ipl ) {
-            imin = imid + 1;
+        else if ( curBlock.start > ipl ) {
+            maxIndex = currentIndex - 1;
         }
         else {
-            imax = imid - 1;
+            block = curBlock;
+            break;
         }
     }
 
-    return undefined;
+    if ( !block ) {
+        return undefined;
+    }
+    
+    return locations[ block.locId ];
 }
 
 /**
@@ -104,12 +114,9 @@ function find( ipl ) {
 ( function() {
 
     var async = require( 'async' );
-    var extend = require( 'node.extend' );
     var csv = require( 'csv-stream' );
     var fs = require( 'fs' );
 
-    var blocks = {};
-    
     async.series( [
         // load blocks
         function( next ) {
@@ -131,10 +138,11 @@ function find( ipl ) {
                     return;
                 }
 
-                blocks[ locId ] = {
+                blocks.push( {
+                    locId: locId,
                     start: start,
                     end: end
-                };
+                } );
             } );
         },
 
@@ -155,27 +163,19 @@ function find( ipl ) {
                     return;
                 }
 
-                var block = blocks[ locId ];
-                if ( !block ) {
-                    return;
-                }
-                
-                var location = extend( data, {
-                    ipstart: blocks[ locId ].start,
-                    ipend: blocks[ locId ].end   
-                } );
-                
-                for ( var key in location ) {
-                    location[ key ] = location[ key ] || null;
-                }
-                
-                location.locId = parseInt( locId );
-                location.metroCode = location.metroCode ? parseInt( location.metroCode ) : location.metroCode;
-                location.areaCode = location.areaCode ? parseInt( location.areaCode ) : location.areaCode;
-                location.longitude = location.longitude ? parseFloat( location.longitude ) : location.longitude;
-                location.latitude = location.latitude ? parseFloat( location.latitude ) : location.latitude;
+                var location = {
+                    id: locId,
+                    country: data.country || null,
+                    region: data.region || null,
+                    city: data.city || null,
+                    postalCode: data.postalCode || null,
+                    latitude: data.latitude ? parseFloat( data.latitude ) : null,
+                    longitude: data.longitude ? parseFloat( data.longitude ) : null,
+                    metroCode: data.metroCode ? parseInt( data.metroCode ) : null,
+                    areaCode: data.areaCode ? parseInt( data.areaCode ) : null
+                };
 
-                locations.push( location );
+                locations[ locId ] = location;
             } );
         }
     ], function( error ) {
@@ -183,11 +183,11 @@ function find( ipl ) {
             throw new Error( error );
         }
         
-        locations.sort( function( l, r ) {
-            return l.ipstart - r.ipstart;
-        });
+        blocks.sort( function( l, r ) {
+            return l.start - r.end;
+        } );
 
-        totalLocations = locations.length;
+        totalBlocks = blocks.length;
         geoip.ready = true;
     } );
 
